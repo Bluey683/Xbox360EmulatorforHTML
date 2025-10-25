@@ -79,21 +79,21 @@ html, body{
   display:none;
 }
 
-#uploadBtn{
+button.actionBtn{
   background: linear-gradient(180deg,var(--green-light), var(--green));
   color:#031609;
-  font-size:1.4em;
+  font-size:1.2em;
   font-weight:bold;
   border:none;
   border-radius:30px;
-  padding:16px 40px;
+  padding:12px 30px;
   cursor:pointer;
   box-shadow:0 4px 20px rgba(0,255,100,0.4);
   transition: transform 0.2s;
-  margin-top: 20px;
+  margin:10px 0;
 }
 
-#uploadBtn:hover{transform:scale(1.05)}
+button.actionBtn:hover{transform:scale(1.05)}
 
 input[type=file]{display:none}
 
@@ -140,7 +140,7 @@ input[type=file]{display:none}
   right:18px;
   width:300px;
   max-height:400px;
-  background: var(--log-bg);
+  background: rgba(0,0,0,0.5);
   padding:12px;
   border-radius:8px;
   overflow-y:auto;
@@ -170,9 +170,12 @@ input[type=file]{display:none}
 
 <!-- Tela após boot -->
 <div id="afterScreen">
-  <button id="uploadBtn">🎮 Importar Jogo XEX</button>
+  <button id="uploadBtn" class="actionBtn">🎮 Importar Jogo XEX</button>
   <input type="file" id="fileInput" accept=".xex,.iso,.zip,.7z,.rar,.bin,.img"/>
   <div id="fileName">Nenhum arquivo selecionado</div>
+
+  <button id="restartBtn" class="actionBtn">🔄 Reiniciar Console</button>
+  <button id="shutdownBtn" class="actionBtn">⏻ Desligar Console</button>
 </div>
 
 <!-- Botões fixos -->
@@ -195,6 +198,8 @@ const fileName = document.getElementById("fileName");
 const muteToggle = document.getElementById("muteToggle");
 const menuBtn = document.getElementById("menuBtn");
 const logPanel = document.getElementById("logPanel");
+const restartBtn = document.getElementById("restartBtn");
+const shutdownBtn = document.getElementById("shutdownBtn");
 
 // Comandos de boot simulados
 const bootCommands = [
@@ -217,6 +222,15 @@ function addLogLine(line, delay){
   }, delay);
 }
 
+// Função de iniciar boot
+function startBoot(){
+  video.style.display = "block";
+  afterScreen.style.display = "none";
+  logPanel.innerHTML = "";
+  video.currentTime = 0;
+  video.play();
+}
+
 // Tenta autoplay
 window.addEventListener("load", () => {
   video.play().then(() => {
@@ -231,14 +245,12 @@ window.addEventListener("load", () => {
 startBtn.addEventListener("click", () => {
   video.muted = false;
   startScreen.style.display = "none";
-  video.style.display = "block";
-  video.play();
+  startBoot();
 });
 
 // Quando o vídeo termina
 video.addEventListener("ended", () => {
   afterScreen.style.display = "flex";
-  // Adiciona logs dinamicamente
   bootCommands.forEach((cmd, i) => addLogLine(cmd, i*800));
 });
 
@@ -264,7 +276,20 @@ menuBtn.addEventListener("click", ()=>{
   logVisible = !logVisible;
   logPanel.style.display = logVisible ? "block" : "none";
 });
-</script>
 
+// Reiniciar console
+restartBtn.addEventListener("click", ()=>{
+  startBoot();
+});
+
+// Desligar console
+shutdownBtn.addEventListener("click", ()=>{
+  video.pause();
+  video.style.display = "none";
+  afterScreen.style.display = "none";
+  logPanel.innerHTML = "";
+  startScreen.style.display = "flex";
+});
+</script>
 </body>
 </html>
