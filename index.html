@@ -40,12 +40,14 @@ button {
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
+  transition: 0.2s;
 }
 button:hover {
   filter: brightness(1.2);
+  transform: scale(1.05);
 }
 .panel {
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.85);
   border: 1px solid var(--green);
   border-radius: 10px;
   padding: 15px;
@@ -79,6 +81,7 @@ select {
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 10;
 }
 #videoContainer video {
   width: 100%;
@@ -130,7 +133,10 @@ footer {
 
 <!-- Container de Vídeo -->
 <div id="videoContainer">
-  <video id="gameVideo" src="minecraft_game.mp4"></video>
+  <video id="gameVideo" preload="auto">
+    <source src="minecraft_game.mp4" type="video/mp4">
+    Seu navegador não suporta vídeos.
+  </video>
 </div>
 
 <footer>Versão: Xenia 1.0b - (Demo Beta)</footer>
@@ -160,26 +166,25 @@ document.getElementById('btnFullscreen').onclick = () => {
   }
 };
 
-// Controle de brilho
+// Brilho
 document.getElementById('brightness').oninput = (e) => {
   document.body.style.filter = `brightness(${e.target.value})`;
 };
 
-// Controle de volume
+// Volume
 document.getElementById('volume').oninput = (e) => {
   gameVideo.volume = e.target.value;
 };
 
-// Seleção de idioma
+// Idioma
 document.getElementById('languageSelect').onchange = (e) => {
   const lang = e.target.value;
-  if(lang === 'en'){
+  if (lang === 'en') {
     document.querySelector('h1').textContent = 'Xenia 1.0b - (Demo Beta)';
     document.querySelector('#btnSettings').textContent = '⚙️ Settings';
     document.querySelector('#btnLanguage').textContent = '🌐 Language';
     document.querySelector('#btnPlay').textContent = '▶️ Play Game';
     document.querySelector('#settingsPanel h3').textContent = 'Settings';
-    document.querySelector('label[for=brightness]')?.textContent = 'Brightness';
   } else {
     document.querySelector('h1').textContent = 'Xenia 1.0b - (Demo Beta)';
     document.querySelector('#btnSettings').textContent = '⚙️ Config';
@@ -189,14 +194,18 @@ document.getElementById('languageSelect').onchange = (e) => {
   }
 };
 
-// Iniciar Jogo
+// Iniciar Jogo (corrigido)
 document.getElementById('btnPlay').onclick = () => {
+  settingsPanel.style.display = 'none';
+  languagePanel.style.display = 'none';
   videoContainer.style.display = 'flex';
   gameVideo.currentTime = 0;
-  gameVideo.play();
+  gameVideo.play().catch(err => {
+    alert("⚠️ O navegador bloqueou o autoplay. Clique no vídeo para começar.");
+  });
 };
 
-// Quando vídeo terminar → voltar ao menu
+// Quando vídeo termina → volta ao menu
 gameVideo.onended = () => {
   videoContainer.style.display = 'none';
 };
