@@ -8,7 +8,6 @@
 :root{
   --green: #0b6623;
   --green-light: #25ff7a;
-  --bg-dark: #031006;
   --log-bg: rgba(0,0,0,0.5);
   --text-color: #ccffcc;
 }
@@ -23,7 +22,7 @@ html, body{
   color: var(--text-color);
 }
 
-/* Vídeo full screen */
+/* Vídeo fullscreen */
 #bootVideo{
   position: fixed;
   inset:0;
@@ -33,7 +32,7 @@ html, body{
   display:none;
 }
 
-/* Tela inicial caso autoplay bloqueie */
+/* Tela inicial */
 #startScreen{
   position: fixed;
   inset:0;
@@ -96,10 +95,9 @@ button.actionBtn{
 button.actionBtn:hover{transform:scale(1.05)}
 
 input[type=file]{display:none}
-
 #fileName{margin-top:15px;font-size:0.9em;color:#ccffcc}
 
-/* Botão de som */
+/* Botão som */
 #muteToggle{
   position:fixed;
   top:18px;
@@ -140,7 +138,7 @@ input[type=file]{display:none}
   right:18px;
   width:300px;
   max-height:400px;
-  background: rgba(0,0,0,0.5);
+  background: var(--log-bg);
   padding:12px;
   border-radius:8px;
   overflow-y:auto;
@@ -156,16 +154,15 @@ input[type=file]{display:none}
 </head>
 <body>
 
-<!-- Tela de início -->
+<!-- Tela inicial -->
 <div id="startScreen">
   <h1>Boot Xbox 360</h1>
-  <button id="startBtn">Toque para iniciar o Boot</button>
+  <button id="startBtn">Iniciar Boot</button>
 </div>
 
-<!-- Vídeo do Boot -->
+<!-- Vídeo do boot -->
 <video id="bootVideo" muted autoplay playsinline>
   <source src="xbox360_boot.mp4" type="video/mp4">
-  Seu navegador não suporta vídeo HTML5.
 </video>
 
 <!-- Tela após boot -->
@@ -180,7 +177,7 @@ input[type=file]{display:none}
 
 <!-- Botões fixos -->
 <button id="muteToggle">🔇 Áudio</button>
-<div id="menuBtn" aria-label="Abrir menu">
+<div id="menuBtn">
   <div></div><div></div><div></div>
 </div>
 
@@ -201,7 +198,7 @@ const logPanel = document.getElementById("logPanel");
 const restartBtn = document.getElementById("restartBtn");
 const shutdownBtn = document.getElementById("shutdownBtn");
 
-// Comandos de boot simulados
+// Boot commands simulados
 const bootCommands = [
   "Inicializando hardware de vídeo...",
   "Carregando drivers gráficos...",
@@ -212,7 +209,6 @@ const bootCommands = [
   "Finalizando inicialização..."
 ];
 
-// Função de adicionar log com delay
 function addLogLine(line, delay){
   setTimeout(()=>{
     const div = document.createElement("div");
@@ -222,7 +218,6 @@ function addLogLine(line, delay){
   }, delay);
 }
 
-// Função de iniciar boot
 function startBoot(){
   video.style.display = "block";
   afterScreen.style.display = "none";
@@ -231,32 +226,22 @@ function startBoot(){
   video.play();
 }
 
-// Tenta autoplay
-window.addEventListener("load", () => {
-  video.play().then(() => {
-    startScreen.style.display = "none";
-    video.style.display = "block";
-  }).catch(() => {
-    startScreen.style.display = "flex";
-  });
-});
-
 // Start button
-startBtn.addEventListener("click", () => {
+startBtn.addEventListener("click", ()=>{
   video.muted = false;
   startScreen.style.display = "none";
   startBoot();
 });
 
-// Quando o vídeo termina
-video.addEventListener("ended", () => {
+// Video ended
+video.addEventListener("ended", ()=>{
   afterScreen.style.display = "flex";
-  bootCommands.forEach((cmd, i) => addLogLine(cmd, i*800));
+  bootCommands.forEach((cmd,i)=>addLogLine(cmd,i*800));
 });
 
 // Upload Game
 uploadBtn.addEventListener("click", ()=> fileInput.click());
-fileInput.addEventListener("change", (e)=>{
+fileInput.addEventListener("change",(e)=>{
   if(e.target.files.length>0){
     fileName.textContent = "Selecionado: " + e.target.files[0].name;
   } else {
@@ -270,19 +255,17 @@ muteToggle.addEventListener("click", ()=>{
   muteToggle.textContent = video.muted ? "🔇 Áudio" : "🔊 Áudio";
 });
 
-// Toggle menu logs
+// Toggle logs
 let logVisible = false;
 menuBtn.addEventListener("click", ()=>{
   logVisible = !logVisible;
   logPanel.style.display = logVisible ? "block" : "none";
 });
 
-// Reiniciar console
-restartBtn.addEventListener("click", ()=>{
-  startBoot();
-});
+// Reiniciar
+restartBtn.addEventListener("click", ()=> startBoot());
 
-// Desligar console
+// Desligar
 shutdownBtn.addEventListener("click", ()=>{
   video.pause();
   video.style.display = "none";
@@ -291,5 +274,6 @@ shutdownBtn.addEventListener("click", ()=>{
   startScreen.style.display = "flex";
 });
 </script>
+
 </body>
 </html>
