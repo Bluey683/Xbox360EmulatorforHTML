@@ -4,27 +4,83 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Xenia - v0.6a (Demo)</title>
+
+<!-- ÍCONE HTML (FAVICON) -->
+<link rel="icon" type="image/png" href="xenia_icon.png">
+<link rel="shortcut icon" href="xenia_icon.png">
+
 <style>
-body,html{margin:0;padding:0;height:100%;background:radial-gradient(circle at center,#26ff7a 0%,#0b6623 90%);color:#eaffea;font-family:Arial, sans-serif;overflow:hidden}
-#bootVideo,#gameVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1}
-.startScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:3}
-.start-btn,.actionBtn{background:linear-gradient(180deg,#26ff7a,#0b6623);color:#012;padding:14px 34px;border-radius:999px;border:0;font-weight:900;cursor:pointer;margin:6px;box-shadow:0 12px 30px rgba(0,0,0,0.25)}
-#fileInput{display:none}
-#gamesPanel{position:fixed;left:18px;top:70px;width:420px;max-height:72vh;overflow-y:auto;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);padding:12px;border-radius:12px;display:none;z-index:4}
-#gamesPanel h3{margin-top:0;color:#26ff7a;font-family:monospace}
-#gamesPanel ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;}
-#gamesPanel li{padding:12px;cursor:pointer;border-radius:8px;background:rgba(37,255,122,0.1);display:flex;align-items:center;gap:12px;transition:all 0.2s;}
-#gamesPanel li:hover{background:rgba(37,255,122,0.25);transform:scale(1.02);}
-.gameIcon{width:50px;height:50px;background:#012;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#26ff7a;font-weight:bold;}
-.gameName{flex:1;font-family:monospace;font-weight:700}
+body,html{
+  margin:0;padding:0;height:100%;
+  background:radial-gradient(circle at center,#26ff7a 0%,#0b6623 90%);
+  color:#eaffea;font-family:Arial,sans-serif;overflow:hidden;
+}
+#bootVideo,#gameVideo{
+  position:fixed;inset:0;width:100%;height:100%;
+  object-fit:cover;display:none;z-index:1;
+}
+.startScreen{
+  position:fixed;inset:0;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;z-index:3;
+}
+.start-btn,.actionBtn{
+  background:linear-gradient(180deg,#26ff7a,#0b6623);
+  color:#012;padding:14px 34px;border-radius:999px;border:0;
+  font-weight:900;cursor:pointer;margin:6px;
+  box-shadow:0 12px 30px rgba(0,0,0,0.25);
+}
+#fileInput{display:none;}
+#gamesPanel{
+  position:fixed;left:18px;top:70px;width:420px;max-height:72vh;
+  overflow-y:auto;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);
+  padding:12px;border-radius:12px;display:none;z-index:4;
+}
+#gamesPanel h3{margin-top:0;color:#26ff7a;font-family:monospace;}
+#gamesPanel ul{
+  list-style:none;padding:0;margin:0;
+  display:flex;flex-direction:column;gap:8px;
+}
+#gamesPanel li{
+  padding:12px;cursor:pointer;border-radius:8px;
+  background:rgba(37,255,122,0.1);display:flex;align-items:center;
+  gap:12px;transition:all 0.2s;
+}
+#gamesPanel li:hover{
+  background:rgba(37,255,122,0.25);transform:scale(1.02);
+}
+.gameIcon{
+  width:50px;height:50px;background:#012;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;color:#26ff7a;font-weight:bold;
+}
+.gameName{flex:1;font-family:monospace;font-weight:700;}
 
 /* Settings menu */
-#settingsPanel{position:fixed;right:20px;top:70px;width:380px;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);padding:14px;border-radius:12px;display:none;z-index:5;color:#aaffaa;}
-#settingsPanel h3{margin-top:0;text-align:center;color:#26ff7a}
-.tabBtn{background:#0b6623;color:#eaffea;border:1px solid #26ff7a;border-radius:8px;padding:6px 10px;margin:3px;cursor:pointer;}
+#settingsPanel{
+  position:fixed;right:20px;top:70px;width:380px;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);
+  padding:14px;border-radius:12px;display:none;z-index:5;color:#aaffaa;
+}
+#settingsPanel h3{margin-top:0;text-align:center;color:#26ff7a;}
+.tabBtn{
+  background:#0b6623;color:#eaffea;border:1px solid #26ff7a;
+  border-radius:8px;padding:6px 10px;margin:3px;cursor:pointer;
+}
 .tabBtn.active{background:#26ff7a;color:#012;font-weight:bold;}
 .tabContent{display:none;padding-top:8px;font-family:monospace;}
 #versionText{text-align:center;margin-top:10px;font-size:14px;color:#26ff7a;font-weight:bold;}
+
+/* LOGO NO TOPO */
+.logo{
+  display:flex;align-items:center;gap:10px;margin-bottom:15px;
+}
+.logo img{
+  width:64px;height:64px;
+  filter:drop-shadow(0 0 10px #26ff7a);
+}
+.logo span{
+  font-size:24px;font-weight:bold;color:#26ff7a;font-family:monospace;
+}
 </style>
 </head>
 <body>
@@ -36,7 +92,10 @@ body,html{margin:0;padding:0;height:100%;background:radial-gradient(circle at ce
 <video id="gameVideo" playsinline preload="auto" controls></video>
 
 <div class="startScreen" id="startScreen">
-  <h1>Xenia - v0.6a</h1>
+  <div class="logo">
+    <img src="xenia_icon.png" alt="Xenia Icon">
+    <span>Xenia - v0.6a</span>
+  </div>
   <button id="startBtn" class="start-btn">Iniciar Boot</button>
   <label class="actionBtn" for="fileInput">📂 Adicionar Jogo</label>
   <input type="file" id="fileInput" accept=".mp4,.xex,.iso">
@@ -64,7 +123,12 @@ body,html{margin:0;padding:0;height:100%;background:radial-gradient(circle at ce
   <div id="graphics" class="tabContent" style="display:block;">
     <p>VSync: <input type="checkbox" checked></p>
     <p>Shaders: <input type="checkbox"></p>
-    <p>Resolução: <select><option>1280x720</option><option>1920x1080</option></select></p>
+    <p>Resolução: 
+      <select>
+        <option>1280x720</option>
+        <option>1920x1080</option>
+      </select>
+    </p>
   </div>
   <div id="audio" class="tabContent">
     <p>Som Ativo: <input type="checkbox" checked></p>
@@ -75,7 +139,12 @@ body,html{margin:0;padding:0;height:100%;background:radial-gradient(circle at ce
     <p>Brilho: <input type="range" min="0" max="100" value="50"></p>
   </div>
   <div id="system" class="tabContent">
-    <p>Idioma: <select><option>Português</option><option>Inglês</option></select></p>
+    <p>Idioma: 
+      <select>
+        <option>Português</option>
+        <option>Inglês</option>
+      </select>
+    </p>
     <p>Auto Save: <input type="checkbox" checked></p>
   </div>
   <div id="logs" class="tabContent">
@@ -109,10 +178,14 @@ startBtn.onclick=()=>{
 };
 
 // Alternar painel de jogos
-toggleGamesBtn.onclick=()=>{gamesPanel.style.display=(gamesPanel.style.display==='none')?'block':'none';};
+toggleGamesBtn.onclick=()=>{
+  gamesPanel.style.display=(gamesPanel.style.display==='none')?'block':'none';
+};
 
 // Alternar painel de configurações
-toggleSettingsBtn.onclick=()=>{settingsPanel.style.display=(settingsPanel.style.display==='none')?'block':'none';};
+toggleSettingsBtn.onclick=()=>{
+  settingsPanel.style.display=(settingsPanel.style.display==='none')?'block':'none';
+};
 
 // Tabs do menu de configurações
 document.querySelectorAll('.tabBtn').forEach(btn=>{
