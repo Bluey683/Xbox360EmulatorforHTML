@@ -5,100 +5,53 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Boot Xbox 360 — v0.4a Demo</title>
 <style>
-:root{
-  --green:#0b6623;
-  --green-2:#25ff7a;
-  --panel: rgba(0,0,0,0.48);
-  --text: #eaffea;
-  --muted: rgba(255,255,255,0.75);
-}
+:root{--green:#0b6623;--green-2:#25ff7a;--panel: rgba(0,0,0,0.48);--text: #eaffea;--muted: rgba(255,255,255,0.75);}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;background:radial-gradient(circle at center,var(--green-2) 0%,var(--green) 85%);color:var(--text);overflow:hidden}
-
-/* VIDEO FULLSCREEN */
 #bootVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000;display:none}
-
-/* OVERLAY UI */
 .overlay{position:fixed;inset:0;z-index:3;display:flex;flex-direction:column;pointer-events:none}
-
-/* TOPBAR */
 .topbar{display:flex;justify-content:space-between;gap:12px;padding:14px 18px;pointer-events:auto}
 .left-controls{display:flex;gap:8px;align-items:center}
 .right-controls{display:flex;gap:8px;align-items:center}
-
-/* BUTTONS */
 .ctrl-btn{background:var(--panel);border:1px solid rgba(255,255,255,0.03);padding:8px 10px;border-radius:8px;color:var(--text);cursor:pointer;font-weight:700}
 .ctrl-btn:active{transform:translateY(1px)}
-
-/* MENU HAMBURGER */
 #menuBtn{width:40px;height:34px;display:flex;flex-direction:column;justify-content:space-between;padding:6px;cursor:pointer}
 #menuBtn div{height:3px;background:var(--text);border-radius:3px}
-
-/* CENTER BADGE + PROGRESS */
 .center{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:none}
-.badge{
-  width:260px;height:260px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-family:monospace;color:#022;
-  background:radial-gradient(circle at 30% 20%, rgba(37,255,122,0.45), rgba(11,102,35,0.95));
-  box-shadow:0 40px 120px rgba(11,102,35,0.35);font-size:96px;pointer-events:none;
-}
+.badge{width:260px;height:260px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-family:monospace;color:#022;background:radial-gradient(circle at 30% 20%, rgba(37,255,122,0.45), rgba(11,102,35,0.95));box-shadow:0 40px 120px rgba(11,102,35,0.35);font-size:96px;pointer-events:none;}
 .progressOuter{width:60%;max-width:920px;height:14px;background:rgba(0,0,0,0.22);border-radius:10px;margin-top:18px;overflow:hidden}
 .progressInner{height:100%;width:0%;background:linear-gradient(90deg, rgba(37,255,122,0.36), rgba(37,255,122,1));transition:width 280ms linear;box-shadow:inset 0 -6px 18px rgba(0,0,0,0.35)}
-
-/* LOG PANEL */
-.logPanel{
-  position:fixed;right:18px;top:70px;width:400px;max-height:72vh;background:var(--panel);backdrop-filter:blur(4px);padding:12px;border-radius:10px;overflow-y:auto;display:none;z-index:5;
-  font-family:monospace;font-size:13px;color:#e6ffea;pointer-events:auto;
-}
+.logPanel{position:fixed;right:18px;top:70px;width:400px;max-height:72vh;background:var(--panel);backdrop-filter:blur(4px);padding:12px;border-radius:10px;overflow-y:auto;display:none;z-index:5;font-family:monospace;font-size:13px;color:#e6ffea;pointer-events:auto;}
 .log-line{padding:6px 6px;border-bottom:1px dashed rgba(255,255,255,0.03)}
 .log-controls{display:flex;gap:8px;margin-top:10px}
 .btn-small{padding:8px 10px;border-radius:8px;border:0;cursor:pointer;font-weight:800}
 .btn-compile{background:linear-gradient(180deg,#dfffe0,#b8f8c9);color:#023}
 .btn-clear{background:linear-gradient(180deg,#ffdede,#ffbdbd);color:#420}
-
-/* COMPILE PROGRESS INSIDE LOG PANEL */
 .compile-block{margin-top:10px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.06));border-radius:8px;display:none}
 .compile-bar{height:10px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden}
 .compile-bar > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#9fffae,#2ad67a);transition:width 150ms linear}
-
-/* GRAPHICS CONFIG */
 .config-group{margin-top:12px;padding:8px;background:rgba(0,0,0,0.12);border-radius:8px}
 .config-group label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
 .config-row{display:flex;gap:8px;align-items:center;justify-content:space-between}
-
-/* FIRMWARE GROUP */
 .fw-group{margin-top:12px;padding:8px;background:rgba(0,0,0,0.12);border-radius:8px}
-
-/* AFTER BOOT ACTIONS */
-.after-actions{position:fixed;bottom:28px;left:0;right:0;display:flex;justify-content:center;gap:12px;z-index:5;pointer-events:auto}
+.after-actions{position:fixed;bottom:28px;left:0;right:0;display:flex;justify-content:center;gap:12px;z-index:5;pointer-events:auto;flex-wrap:wrap}
 .actionBtn{background:linear-gradient(180deg,var(--green-2),var(--green));color:#012;padding:12px 20px;border-radius:999px;border:0;font-weight:900;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,0.25)}
-
-/* START SCREEN */
 .startScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:6;pointer-events:auto}
 .start-btn{background:linear-gradient(180deg,var(--green-2),var(--green));padding:14px 34px;border-radius:999px;border:0;font-weight:900;color:#012;cursor:pointer;box-shadow:0 18px 40px rgba(0,0,0,0.35)}
-
-/* VERSION TEXT */
 .versionTxt{position:fixed;bottom:14px;right:18px;color:#bfffc9;font-weight:800;font-family:monospace;font-size:14px;z-index:7;pointer-events:none}
-
-/* hidden file inputs */
 input[type=file]{display:none}
-
-/* small file note */
 .file-note{position:fixed;left:18px;bottom:18px;background:var(--panel);padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted);z-index:6;pointer-events:auto}
 </style>
 </head>
 <body>
 
-<!-- VIDEO -->
 <video id="bootVideo" playsinline preload="auto">
   <source src="xbox360_boot.mp4" type="video/mp4">
   Seu navegador não suporta vídeo.
 </video>
 
-<!-- OVERLAY UI -->
 <div class="overlay">
-
-  <!-- TOPBAR -->
-  <div class="topbar" style="pointer-events:auto">
+  <div class="topbar">
     <div class="left-controls">
       <button id="muteBtn" class="ctrl-btn" title="Ativar / Desativar som">🔇 Áudio</button>
       <div style="display:flex;align-items:center;gap:8px;padding-left:6px;color:var(--muted)">
@@ -110,10 +63,10 @@ input[type=file]{display:none}
       <div id="menuBtn" title="Abrir / Fechar logs" aria-expanded="false">
         <div></div><div></div><div></div>
       </div>
+      <button id="fullscreenBtn" class="ctrl-btn" title="Tela cheia">⛶ Fullscreen</button>
     </div>
   </div>
 
-  <!-- CENTER BADGE + PROGRESS -->
   <div class="center">
     <div class="badge">360</div>
     <div class="progressOuter">
@@ -121,93 +74,31 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <!-- AFTER BOOT ACTIONS -->
   <div class="after-actions" id="afterActions" style="display:none;">
-    <label for="fileInput" class="actionBtn" id="importBtn" style="display:inline-flex;align-items:center;gap:8px">🎮 Importar XEX</label>
+    <label for="fileInput" class="actionBtn" id="importBtn">🎮 Importar XEX</label>
+    <button class="actionBtn" id="installDLCBtn">📦 Install DLC</button>
+    <button class="actionBtn" id="titleUpdateBtn">🔄 Title Update</button>
+    <button class="actionBtn" id="createUserBtn">👤 Create User</button>
     <button class="actionBtn" id="restartBtn">🔄 Reiniciar</button>
     <button class="actionBtn" id="shutdownBtn">⏻ Desligar</button>
   </div>
-
 </div>
 
-<!-- START SCREEN -->
 <div class="startScreen" id="startScreen">
-  <h1 style="margin:0 0 12px 0">Boot Xbox 360</h1>
+  <h1>Boot Xbox 360</h1>
   <button id="startBtn" class="start-btn">Iniciar Boot</button>
 </div>
 
-<!-- LOG PANEL -->
 <div class="logPanel" id="logPanel">
   <div id="logLines"></div>
   <div class="log-controls">
     <button id="compileBtn" class="btn-small btn-compile">Compilar Shaders</button>
     <button id="clearBtn" class="btn-small btn-clear">Limpar</button>
   </div>
-
-  <!-- Compile Block -->
-  <div class="compile-block" id="compileBlock">
-    <div style="font-size:13px;margin-bottom:6px" id="shaderStatus">Aguardando</div>
-    <div class="compile-bar"><i id="shaderBar"></i></div>
-  </div>
-
-  <!-- Graphics Config -->
-  <div class="config-group">
-    <label>Graphics Config</label>
-    <div class="config-row">
-      <span>VSync</span>
-      <input type="checkbox" id="vsyncToggle"/>
-    </div>
-    <div class="config-row">
-      <span>Shader Quality</span>
-      <select id="shaderQuality">
-        <option value="low">Baixa</option>
-        <option value="med" selected>Média</option>
-        <option value="high">Alta</option>
-        <option value="ultra">Ultra</option>
-      </select>
-    </div>
-    <div class="config-row">
-      <span>Resolução</span>
-      <select id="resolutionSelect">
-        <option value="1x">1x (768p)</option>
-        <option value="1.5x">1.5x (1080p)</option>
-        <option value="2x" selected>2x (1440p)</option>
-        <option value="3x">3x (4K)</option>
-      </select>
-    </div>
-    <div class="config-row">
-      <label><input type="checkbox" id="autoCompile"/> Auto compile shaders on boot</label>
-    </div>
-  </div>
-
-  <!-- Firmware System -->
-  <div class="fw-group">
-    <label style="font-weight:800">Firmware System</label>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-      <label class="btn-small">
-        Selecionar Firmware Local
-        <input id="fwInput" type="file" accept=".bin,.fw,.img" />
-      </label>
-      <select id="fwSelect" class="btn-small">
-        <option value="">Escolher da pasta /firmware</option>
-        <option value="firmware/firmware_v1.bin">Firmware v1</option>
-        <option value="firmware/firmware_v2.bin">Firmware v2</option>
-        <option value="firmware/firmware_test.fw">Firmware Test</option>
-      </select>
-      <button id="fwVerifyBtn" class="btn-small">Verificar checksum</button>
-      <button id="fwApplyBtn" class="btn-small btn-compile">Aplicar</button>
-      <div id="fwInfo" style="font-size:12px;color:var(--muted)">Nenhum arquivo carregado</div>
-    </div>
-  </div>
 </div>
 
-<!-- hidden file input -->
 <input id="fileInput" type="file" accept=".xex,.iso,.bin,.img" />
-
-<!-- FILE NOTE -->
 <div class="file-note" id="fileNote">Nenhum arquivo selecionado</div>
-
-<!-- VERSION TEXT -->
 <div class="versionTxt">v0.4a - Demo</div>
 
 <script>
@@ -224,22 +115,23 @@ const restartBtn=document.getElementById('restartBtn');
 const shutdownBtn=document.getElementById('shutdownBtn');
 const fileInput=document.getElementById('fileInput');
 const fileNote=document.getElementById('fileNote');
+const fullscreenBtn=document.getElementById('fullscreenBtn');
+const installDLCBtn=document.getElementById('installDLCBtn');
+const titleUpdateBtn=document.getElementById('titleUpdateBtn');
+const createUserBtn=document.getElementById('createUserBtn');
 
-let bootPct=0;
-let bootInterval;
-let videoPlaying=false;
+let bootPct=0, bootInterval, videoPlaying=false, muted=false;
+
+// Sons
+const audioPowerOn=new Audio('power_on.mp3');
+const audioPowerOff=new Audio('power_off.mp3');
+const audioClick=new Audio('click.mp3');
 
 // Funções log
-function addLog(line){
-  const div=document.createElement('div');
-  div.className='log-line';
-  div.textContent='> '+line;
-  logLines.appendChild(div);
-  logPanel.scrollTop=logPanel.scrollHeight;
-}
+function addLog(line){const div=document.createElement('div');div.className='log-line';div.textContent='> '+line;logLines.appendChild(div);logPanel.scrollTop=logPanel.scrollHeight;}
 
-// Função boot progress
-function startBoot(){
+// Boot
+function startBoot(playSound=true){
   startScreen.style.display='none';
   bootVideo.style.display='block';
   logPanel.style.display='block';
@@ -247,11 +139,8 @@ function startBoot(){
   bootPct=0;
   mainProgress.style.width='0%';
   addLog('Iniciando boot Xbox 360...');
-  if(!videoPlaying){
-    bootVideo.currentTime=0;
-    bootVideo.play();
-    videoPlaying=true;
-  }
+  if(playSound && !muted) audioPowerOn.play();
+  if(!videoPlaying){bootVideo.currentTime=0;bootVideo.play();videoPlaying=true;}
   bootInterval=setInterval(()=>{
     bootPct+=1;
     mainProgress.style.width=bootPct+'%';
@@ -260,84 +149,33 @@ function startBoot(){
       clearInterval(bootInterval);
       addLog('Boot concluído!');
       mainProgress.style.width='100%';
-      setTimeout(()=>{
-        bootVideo.style.display='none';
-        logPanel.style.display='none';
-        afterActions.style.display='flex';
-      },600);
+      setTimeout(()=>{bootVideo.style.display='none';logPanel.style.display='none';afterActions.style.display='flex';},600);
     }
   },100);
 }
 
-// Botão iniciar
-startBtn.onclick=startBoot;
-
-// Botão mutar/desmutar
-let muted=false;
-muteBtn.onclick=()=>{
-  muted=!muted;
-  bootVideo.muted=muted;
-  muteBtn.textContent=muted?'🔈 Áudio':'🔇 Áudio';
-};
-
-// Menu hamburger
-const menuBtn=document.getElementById('menuBtn');
-menuBtn.onclick=()=>{
-  if(logPanel.style.display==='none'){
-    logPanel.style.display='block';
-    menuBtn.setAttribute('aria-expanded','true');
-  }else{
-    logPanel.style.display='none';
-    menuBtn.setAttribute('aria-expanded','false');
-  }
-};
-
-// Reiniciar console
-restartBtn.onclick=()=>{
-  bootVideo.style.display='block';
-  afterActions.style.display='none';
-  logPanel.style.display='block';
-  videoPlaying=false;
-  startBoot();
-};
-
-// Desligar console
-shutdownBtn.onclick=()=>{
-  bootVideo.style.display='none';
-  afterActions.style.display='none';
-  logPanel.style.display='none';
-  startScreen.style.display='flex';
-};
-
-// Upload Game
-fileInput.onchange=(e)=>{
-  const file=e.target.files[0];
-  if(file){
-    fileNote.textContent=`Arquivo selecionado: ${file.name}`;
-    addLog(`Importado: ${file.name}`);
-  }
-};
+// Eventos
+startBtn.onclick=()=>{if(!muted)audioClick.play();startBoot();}
+muteBtn.onclick=()=>{muted=!muted;bootVideo.muted=muted;[audioPowerOn,audioPowerOff,audioClick].forEach(a=>a.muted=muted);muteBtn.textContent=muted?'🔈 Áudio':'🔇 Áudio';if(!muted)audioClick.play();}
+document.getElementById('menuBtn').onclick=()=>{if(!muted)audioClick.play();logPanel.style.display=(logPanel.style.display==='none')?'block':'none';}
+restartBtn.onclick=()=>{if(!muted)audioClick.play();videoPlaying=false;startBoot(true);}
+shutdownBtn.onclick=()=>{if(!muted)audioClick.play();bootVideo.style.display='none';afterActions.style.display='none';logPanel.style.display='none';startScreen.style.display='flex';if(!muted)audioPowerOff.play();}
+fileInput.onchange=(e)=>{const file=e.target.files[0];if(file){fileNote.textContent=`Arquivo selecionado: ${file.name}`;addLog(`Importado: ${file.name}`);if(!muted)audioClick.play();}}
 document.getElementById('importBtn').onclick=()=>fileInput.click();
+document.getElementById('compileBtn').onclick=()=>{if(!muted)audioClick.play();addLog('Compilando shaders...');};
+document.getElementById('clearBtn').onclick=()=>{if(!muted)audioClick.play();logLines.innerHTML='';addLog('Logs limpos');};
 
-// Compile Shaders
-const compileBtn=document.getElementById('compileBtn');
-const compileBlock=document.getElementById('compileBlock');
-const shaderBar=document.getElementById('shaderBar');
-const shaderStatus=document.getElementById('shaderStatus');
-compileBtn.onclick=()=>{
-  compileBlock.style.display='block';
-  shaderBar.style.width='0%';
-  shaderStatus.textContent='Compilando shaders...';
-  let pct=0;
-  const intv=setInterval(()=>{
-    pct+=Math.random()*12;
-    if(pct>=100){pct=100;clearInterval(intv);shaderStatus.textContent='Shaders compilados!';setTimeout(()=>compileBlock.style.display='none',1200)}
-    shaderBar.style.width=pct+'%';
-  },120);
+// Fullscreen
+fullscreenBtn.onclick=()=>{
+  if(!muted) audioClick.play();
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err=>addLog(`Erro fullscreen: ${err.message}`));
+  else document.exitFullscreen();
 };
 
-// Limpar logs
-document.getElementById('clearBtn').onclick=()=>{logLines.innerHTML='';addLog('Logs limpos')};
+// Novos botões
+installDLCBtn.onclick = () => {if(!muted) audioClick.play(); addLog('Instalando DLC...'); setTimeout(()=> addLog('DLC instalado com sucesso!'), 1500);}
+titleUpdateBtn.onclick = () => {if(!muted) audioClick.play(); addLog('Baixando Title Update...'); setTimeout(()=> addLog('Title Update aplicado!'), 2000);}
+createUserBtn.onclick = () => {if(!muted) audioClick.play(); const username=prompt('Digite o nome do novo usuário:'); if(username) addLog(`Usuário "${username}" criado com sucesso!`); else addLog('Criação de usuário cancelada.');}
 </script>
 
 </body>
