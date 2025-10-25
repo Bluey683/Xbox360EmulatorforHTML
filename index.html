@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Xenia - v0.6a (Demo)</title>
+<title>Xenia 1.0b - (Demo Beta)</title>
 
 <link rel="icon" type="image/png" href="xenia_icon.png">
 <link rel="shortcut icon" href="xenia_icon.png">
@@ -53,8 +53,6 @@ body,html{
   font-size:24px;color:#26ff7a;font-weight:bold;
 }
 .gameName{flex:1;font-family:monospace;font-weight:700;}
-
-/* Painel de configurações */
 #settingsPanel{
   position:fixed;right:20px;top:70px;width:380px;
   background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);
@@ -68,25 +66,18 @@ body,html{
 .tabBtn.active{background:#26ff7a;color:#012;font-weight:bold;}
 .tabContent{display:none;padding-top:8px;font-family:monospace;}
 #versionText{text-align:center;margin-top:10px;font-size:14px;color:#26ff7a;font-weight:bold;}
-
-/* Logo */
-.logo{
-  display:flex;align-items:center;gap:10px;margin-bottom:15px;
-}
-.logo img{
-  width:64px;height:64px;
-  filter:drop-shadow(0 0 10px #26ff7a);
-}
-.logo span{
-  font-size:24px;font-weight:bold;color:#26ff7a;font-family:monospace;
-}
-
-/* Botão de sair do vídeo */
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:15px;}
+.logo img{width:64px;height:64px;filter:drop-shadow(0 0 10px #26ff7a);}
+.logo span{font-size:24px;font-weight:bold;color:#26ff7a;font-family:monospace;}
 #exitBtn{
   position:fixed;top:20px;right:20px;z-index:10;
   background:rgba(0,0,0,0.6);color:#26ff7a;border:none;
   border-radius:10px;padding:10px 20px;cursor:pointer;
   font-weight:bold;font-family:monospace;display:none;
+}
+#brightnessLayer{
+  position:fixed;inset:0;background:black;opacity:0;
+  pointer-events:none;z-index:2;transition:opacity 0.2s;
 }
 </style>
 </head>
@@ -97,12 +88,13 @@ body,html{
 </video>
 
 <video id="gameVideo" playsinline preload="auto" controls></video>
+<div id="brightnessLayer"></div>
 <button id="exitBtn">⏹ Voltar ao Menu</button>
 
 <div class="startScreen" id="startScreen">
   <div class="logo">
     <img src="xenia_icon.png" alt="Xenia Icon">
-    <span>Xenia - v0.6a</span>
+    <span>Xenia 1.0b - (Demo Beta)</span>
   </div>
   <button id="startBtn" class="start-btn">Iniciar Boot</button>
   <label class="actionBtn" for="fileInput">📂 Adicionar Jogo</label>
@@ -121,7 +113,7 @@ body,html{
   <div>
     <button class="tabBtn active" data-tab="graphics">Graphics</button>
     <button class="tabBtn" data-tab="audio">Som</button>
-    <button class="tabBtn" data-tab="video">Tela / Vídeo</button>
+    <button class="tabBtn" data-tab="video">Tela</button>
     <button class="tabBtn" data-tab="system">Sistema</button>
     <button class="tabBtn" data-tab="logs">Logs</button>
   </div>
@@ -137,12 +129,12 @@ body,html{
     </p>
   </div>
   <div id="audio" class="tabContent">
-    <p>Som Ativo: <input type="checkbox" checked></p>
-    <p>Volume: <input type="range" min="0" max="100" value="80"></p>
+    <p>Som Ativo: <input type="checkbox" id="soundToggle" checked></p>
+    <p>Volume: <input type="range" id="volumeSlider" min="0" max="100" value="80"></p>
   </div>
   <div id="video" class="tabContent">
-    <p>Tela Cheia: <input type="checkbox"></p>
-    <p>Brilho: <input type="range" min="0" max="100" value="50"></p>
+    <p>Tela Cheia: <input type="checkbox" id="fullscreenToggle"></p>
+    <p>Brilho: <input type="range" id="brightnessSlider" min="0" max="100" value="0"></p>
   </div>
   <div id="system" class="tabContent">
     <p>Idioma: 
@@ -156,7 +148,7 @@ body,html{
   <div id="logs" class="tabContent">
     <p><textarea rows="6" cols="35" readonly>Logs do sistema aparecerão aqui...</textarea></p>
   </div>
-  <div id="versionText">Versão: Xenia - v0.6a</div>
+  <div id="versionText">Versão: Xenia 1.0b - (Demo Beta)</div>
 </div>
 
 <script>
@@ -171,10 +163,15 @@ const settingsPanel=document.getElementById('settingsPanel');
 const bootVideo=document.getElementById('bootVideo');
 const gameVideo=document.getElementById('gameVideo');
 const exitBtn=document.getElementById('exitBtn');
+const brightnessLayer=document.getElementById('brightnessLayer');
+const soundToggle=document.getElementById('soundToggle');
+const volumeSlider=document.getElementById('volumeSlider');
+const brightnessSlider=document.getElementById('brightnessSlider');
+const fullscreenToggle=document.getElementById('fullscreenToggle');
 
 let games=[];
 
-// Iniciar boot
+// Boot inicial
 startBtn.onclick=()=>{
   bootVideo.style.display='block';
   bootVideo.currentTime=0;
@@ -187,7 +184,7 @@ startBtn.onclick=()=>{
 toggleGamesBtn.onclick=()=>gamesPanel.style.display=(gamesPanel.style.display==='none')?'block':'none';
 toggleSettingsBtn.onclick=()=>settingsPanel.style.display=(settingsPanel.style.display==='none')?'block':'none';
 
-// Tabs do menu de configurações
+// Tabs das configurações
 document.querySelectorAll('.tabBtn').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active'));
@@ -214,10 +211,6 @@ fileInput.onchange=(e)=>{
     li.appendChild(span);
     li.onclick=()=>playGame(file);
     gamesList.appendChild(li);
-
-    if(name.toLowerCase().includes('minecraft_game.mp4')){
-      playGame(file);
-    }
   }
 };
 
@@ -237,12 +230,24 @@ function playGame(file){
   }
 }
 
-// Voltar ao menu manualmente
+// Voltar ao menu
 exitBtn.onclick=()=>{
   gameVideo.pause();
   gameVideo.style.display='none';
   exitBtn.style.display='none';
   startScreen.style.display='flex';
+};
+
+// Controles de áudio e vídeo
+volumeSlider.oninput=()=>gameVideo.volume=volumeSlider.value/100;
+soundToggle.onchange=()=>gameVideo.muted=!soundToggle.checked;
+brightnessSlider.oninput=()=>brightnessLayer.style.opacity=brightnessSlider.value/100;
+fullscreenToggle.onchange=()=>{
+  if(fullscreenToggle.checked){
+    document.documentElement.requestFullscreen();
+  }else{
+    document.exitFullscreen();
+  }
 };
 </script>
 
