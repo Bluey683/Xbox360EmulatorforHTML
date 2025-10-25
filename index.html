@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Boot Xbox 360 — v0.4a Demo</title>
 <style>
 :root{--green:#0b6623;--green-2:#25ff7a;--panel: rgba(0,0,0,0.48);--text: #eaffea;--muted: rgba(255,255,255,0.75);}
@@ -27,13 +27,6 @@ html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;background:r
 .btn-small{padding:8px 10px;border-radius:8px;border:0;cursor:pointer;font-weight:800}
 .btn-compile{background:linear-gradient(180deg,#dfffe0,#b8f8c9);color:#023}
 .btn-clear{background:linear-gradient(180deg,#ffdede,#ffbdbd);color:#420}
-.compile-block{margin-top:10px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.06));border-radius:8px;display:none}
-.compile-bar{height:10px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden}
-.compile-bar > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#9fffae,#2ad67a);transition:width 150ms linear}
-.config-group{margin-top:12px;padding:8px;background:rgba(0,0,0,0.12);border-radius:8px}
-.config-group label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
-.config-row{display:flex;gap:8px;align-items:center;justify-content:space-between}
-.fw-group{margin-top:12px;padding:8px;background:rgba(0,0,0,0.12);border-radius:8px}
 .after-actions{position:fixed;bottom:28px;left:0;right:0;display:flex;justify-content:center;gap:12px;z-index:5;pointer-events:auto;flex-wrap:wrap}
 .actionBtn{background:linear-gradient(180deg,var(--green-2),var(--green));color:#012;padding:12px 20px;border-radius:999px;border:0;font-weight:900;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,0.25)}
 .startScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:6;pointer-events:auto}
@@ -41,6 +34,9 @@ html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;background:r
 .versionTxt{position:fixed;bottom:14px;right:18px;color:#bfffc9;font-weight:800;font-family:monospace;font-size:14px;z-index:7;pointer-events:none}
 input[type=file]{display:none}
 .file-note{position:fixed;left:18px;bottom:18px;background:var(--panel);padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted);z-index:6;pointer-events:auto}
+#gamesPanel{position:fixed;left:18px;top:70px;width:300px;max-height:72vh;display:none;background:var(--panel);backdrop-filter:blur(4px);padding:12px;border-radius:10px;overflow-y:auto; z-index:5;}
+#gamesPanel h3{margin-top:0;color:var(--green-2)}
+#gamesPanel ul{list-style:none;padding:0;margin:0;}
 </style>
 </head>
 <body>
@@ -75,10 +71,11 @@ input[type=file]{display:none}
   </div>
 
   <div class="after-actions" id="afterActions" style="display:none;">
-    <label for="fileInput" class="actionBtn" id="importBtn">🎮 Importar XEX</label>
+    <label for="fileInput" class="actionBtn" id="importBtn">🎮 Importar XEX/ISO</label>
     <button class="actionBtn" id="installDLCBtn">📦 Install DLC</button>
     <button class="actionBtn" id="titleUpdateBtn">🔄 Title Update</button>
     <button class="actionBtn" id="createUserBtn">👤 Create User</button>
+    <button class="actionBtn" id="toggleGamesBtn">🎮 Games</button>
     <button class="actionBtn" id="restartBtn">🔄 Reiniciar</button>
     <button class="actionBtn" id="shutdownBtn">⏻ Desligar</button>
   </div>
@@ -95,6 +92,17 @@ input[type=file]{display:none}
     <button id="compileBtn" class="btn-small btn-compile">Compilar Shaders</button>
     <button id="clearBtn" class="btn-small btn-clear">Limpar</button>
   </div>
+</div>
+
+<div id="gamesPanel">
+  <h3>📚 Lista de Games</h3>
+  <ul id="gamesList">
+    <li>Halo 3</li>
+    <li>Gears of War</li>
+    <li>Forza Horizon 4</li>
+    <li>Fable II</li>
+    <li>Call of Duty: Black Ops</li>
+  </ul>
 </div>
 
 <input id="fileInput" type="file" accept=".xex,.iso,.bin,.img" />
@@ -119,6 +127,9 @@ const fullscreenBtn=document.getElementById('fullscreenBtn');
 const installDLCBtn=document.getElementById('installDLCBtn');
 const titleUpdateBtn=document.getElementById('titleUpdateBtn');
 const createUserBtn=document.getElementById('createUserBtn');
+const toggleGamesBtn=document.getElementById('toggleGamesBtn');
+const gamesPanel=document.getElementById('gamesPanel');
+const gamesList=document.getElementById('gamesList');
 
 let bootPct=0, bootInterval, videoPlaying=false, muted=false;
 
@@ -160,22 +171,35 @@ muteBtn.onclick=()=>{muted=!muted;bootVideo.muted=muted;[audioPowerOn,audioPower
 document.getElementById('menuBtn').onclick=()=>{if(!muted)audioClick.play();logPanel.style.display=(logPanel.style.display==='none')?'block':'none';}
 restartBtn.onclick=()=>{if(!muted)audioClick.play();videoPlaying=false;startBoot(true);}
 shutdownBtn.onclick=()=>{if(!muted)audioClick.play();bootVideo.style.display='none';afterActions.style.display='none';logPanel.style.display='none';startScreen.style.display='flex';if(!muted)audioPowerOff.play();}
-fileInput.onchange=(e)=>{const file=e.target.files[0];if(file){fileNote.textContent=`Arquivo selecionado: ${file.name}`;addLog(`Importado: ${file.name}`);if(!muted)audioClick.play();}}
+
+// Upload XEX/ISO e adicionar à lista de games
+fileInput.onchange = (e) => {
+  const file = e.target.files[0];
+  if(file){
+    fileNote.textContent = `Arquivo selecionado: ${file.name}`;
+    addLog(`Importado: ${file.name}`);
+    const li = document.createElement('li');
+    li.textContent = file.name;
+    gamesList.appendChild(li);
+    if(!muted) audioClick.play();
+  }
+};
 document.getElementById('importBtn').onclick=()=>fileInput.click();
-document.getElementById('compileBtn').onclick=()=>{if(!muted)audioClick.play();addLog('Compilando shaders...');};
-document.getElementById('clearBtn').onclick=()=>{if(!muted)audioClick.play();logLines.innerHTML='';addLog('Logs limpos');};
 
 // Fullscreen
-fullscreenBtn.onclick=()=>{
-  if(!muted) audioClick.play();
-  if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err=>addLog(`Erro fullscreen: ${err.message}`));
-  else document.exitFullscreen();
-};
+fullscreenBtn.onclick=()=>{if(!muted) audioClick.play(); if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err=>addLog(`Erro fullscreen: ${err.message}`)); else document.exitFullscreen();}
+
+// Lista de jogos toggle
+toggleGamesBtn.onclick=()=>{if(!muted) audioClick.play(); gamesPanel.style.display=(gamesPanel.style.display==='none')?'block':'none';}
 
 // Novos botões
 installDLCBtn.onclick = () => {if(!muted) audioClick.play(); addLog('Instalando DLC...'); setTimeout(()=> addLog('DLC instalado com sucesso!'), 1500);}
 titleUpdateBtn.onclick = () => {if(!muted) audioClick.play(); addLog('Baixando Title Update...'); setTimeout(()=> addLog('Title Update aplicado!'), 2000);}
 createUserBtn.onclick = () => {if(!muted) audioClick.play(); const username=prompt('Digite o nome do novo usuário:'); if(username) addLog(`Usuário "${username}" criado com sucesso!`); else addLog('Criação de usuário cancelada.');}
+
+// Log painel
+document.getElementById('compileBtn').onclick=()=>{if(!muted)audioClick.play();addLog('Compilando shaders...');};
+document.getElementById('clearBtn').onclick=()=>{if(!muted)audioClick.play();logLines.innerHTML='';addLog('Logs limpos');};
 </script>
 
 </body>
