@@ -1,279 +1,397 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boot Xbox 360</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Boot Xbox 360 — Demo</title>
 <style>
 :root{
-  --green: #0b6623;
-  --green-light: #25ff7a;
-  --log-bg: rgba(0,0,0,0.5);
-  --text-color: #ccffcc;
+  --green:#0b6623;
+  --green-light:#25ff7a;
+  --bg:#031006;
+  --panel: rgba(0,0,0,0.45);
+  --text:#cfffce;
 }
 
-html, body{
-  margin:0;
-  padding:0;
-  height:100%;
-  font-family: Arial, sans-serif;
-  overflow:hidden;
-  background: radial-gradient(circle at center, var(--green-light) 0%, var(--green) 90%);
-  color: var(--text-color);
-}
+/* Base */
+html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;background:radial-gradient(circle at center,var(--green-light) 0%,var(--green) 90%);color:var(--text);overflow:hidden}
 
-/* Vídeo fullscreen */
+/* Video (covers whole screen while playing) */
 #bootVideo{
-  position: fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:none;
+  position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1;background:black;
 }
 
-/* Tela inicial */
+/* Start screen */
 #startScreen{
-  position: fixed;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  background: linear-gradient(180deg,var(--green-light), var(--green));
-  text-align:center;
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:6;
+  background:linear-gradient(180deg,var(--green-light),var(--green));
+  -webkit-backdrop-filter: blur(1px);
 }
+#startScreen h1{margin:0;font-size:28px;text-shadow:0 4px 30px rgba(0,0,0,0.35)}
+#startBtn{background:linear-gradient(180deg,var(--green-light),var(--green));color:#032;padding:14px 36px;border-radius:30px;border:0;font-weight:700;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.35)}
 
-#startScreen h1{
-  font-size:2em;
-  margin-bottom:20px;
-  text-shadow: 0 0 10px #0f0;
-}
+/* Overlay that appears after boot */
+#afterScreen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:6}
 
-#startBtn{
-  background: linear-gradient(180deg,var(--green-light), var(--green));
-  color:#031609;
-  font-size:1.4em;
-  font-weight:bold;
-  border:none;
-  border-radius:30px;
-  padding:16px 40px;
-  cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,255,100,0.4);
-  transition: transform 0.2s;
-}
+/* Center badge + progress area */
+.centerWrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:4;pointer-events:none}
+.badge{width:300px;height:300px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:monospace;font-weight:800;color:#052;background:radial-gradient(circle at 30% 20%, rgba(37,255,122,0.45), rgba(11,102,35,0.95));box-shadow:0 40px 120px rgba(11,102,35,0.35);pointer-events:none}
+.progressBarOuter{width:60%;max-width:880px;height:16px;background:rgba(0,0,0,0.2);border-radius:12px;overflow:hidden;pointer-events:none}
+.progressBarInner{height:100%;width:0%;background:linear-gradient(90deg, rgba(37,255,122,0.35), rgba(37,255,122,0.9));transition:width 300ms linear;box-shadow:inset 0 -6px 20px rgba(0,0,0,0.4)}
 
-#startBtn:hover{transform:scale(1.05)}
+/* Controls: top-left (mute), top-right (menu) */
+#muteToggle{position:fixed;left:18px;top:18px;z-index:8;background:var(--panel);padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+#menuBtn{position:fixed;right:18px;top:18px;z-index:8;width:40px;height:36px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer}
+#menuBtn div{height:4px;background:#fff;border-radius:3px}
 
-/* Tela após boot */
-#afterScreen{
-  position: fixed;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  background: radial-gradient(circle at center, var(--green-light) 0%, var(--green) 90%);
-  display:none;
-}
+/* Log panel */
+#logPanel{position:fixed;right:18px;top:64px;width:340px;max-height:56vh;background:var(--panel);padding:12px;border-radius:8px;overflow:auto;display:none;z-index:9;font-family:monospace;font-size:13px;color:#dfffe0}
+.log-line{padding:4px 0;border-bottom:1px dashed rgba(255,255,255,0.02);}
 
-button.actionBtn{
-  background: linear-gradient(180deg,var(--green-light), var(--green));
-  color:#031609;
-  font-size:1.2em;
-  font-weight:bold;
-  border:none;
-  border-radius:30px;
-  padding:12px 30px;
-  cursor:pointer;
-  box-shadow:0 4px 20px rgba(0,255,100,0.4);
-  transition: transform 0.2s;
-  margin:10px 0;
-}
+/* Compile shaders button inside log panel area (control strip) */
+.log-controls{display:flex;gap:8px;margin-top:8px}
+.btn-small{background:linear-gradient(180deg,#e6ffed,#baf7c9);color:#023;padding:8px 10px;border-radius:8px;border:0;cursor:pointer;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,0.25);font-size:13px}
 
-button.actionBtn:hover{transform:scale(1.05)}
+/* Compile progress modal inside panel */
+#compileProgress{display:none;margin-top:10px;padding:8px;background:rgba(0,0,0,0.25);border-radius:8px}
+#compileProgress .bar{height:10px;background:rgba(255,255,255,0.06);border-radius:8px;overflow:hidden}
+#compileProgress .bar > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#9fffae,#2ad67a);transition:width 150ms linear}
 
+/* Action buttons area (after boot) */
+.actions{display:flex;gap:12px;align-items:center;pointer-events:auto}
+.actionBtn{background:linear-gradient(180deg,var(--green-light),var(--green));color:#032;padding:12px 20px;border-radius:999px;border:0;font-weight:800;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,0.25)}
+
+/* Hidden file input */
 input[type=file]{display:none}
-#fileName{margin-top:15px;font-size:0.9em;color:#ccffcc}
 
-/* Botão som */
-#muteToggle{
-  position:fixed;
-  top:18px;
-  left:18px;
-  z-index:10;
-  background: rgba(0,0,0,0.35);
-  color: var(--text-color);
-  border:1px solid rgba(255,255,255,0.04);
-  padding:8px 12px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-/* Botão hamburguer */
-#menuBtn{
-  position:fixed;
-  top:18px;
-  right:18px;
-  z-index:10;
-  width:32px;
-  height:28px;
-  cursor:pointer;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-}
-
-#menuBtn div{
-  height:4px;
-  background:white;
-  border-radius:2px;
-}
-
-/* Painel de logs */
-#logPanel{
-  position:fixed;
-  top:60px;
-  right:18px;
-  width:300px;
-  max-height:400px;
-  background: var(--log-bg);
-  padding:12px;
-  border-radius:8px;
-  overflow-y:auto;
-  display:none;
-  font-family: monospace;
-  font-size:12px;
-}
-
-#logPanel div{
-  padding:2px 0;
-}
+/* small note */
+.note{position:fixed;left:18px;bottom:18px;z-index:9;background:var(--panel);padding:8px 10px;border-radius:8px;font-size:13px;color:#eaffea}
 </style>
 </head>
 <body>
 
-<!-- Tela inicial -->
-<div id="startScreen">
+<!-- Start screen -->
+<div id="startScreen" role="dialog" aria-label="Iniciar Boot">
   <h1>Boot Xbox 360</h1>
   <button id="startBtn">Iniciar Boot</button>
 </div>
 
-<!-- Vídeo do boot -->
-<video id="bootVideo" muted autoplay playsinline>
+<!-- Video -->
+<video id="bootVideo" playsinline muted preload="auto">
   <source src="xbox360_boot.mp4" type="video/mp4">
 </video>
 
-<!-- Tela após boot -->
-<div id="afterScreen">
-  <button id="uploadBtn" class="actionBtn">🎮 Importar Jogo XEX</button>
-  <input type="file" id="fileInput" accept=".xex,.iso,.zip,.7z,.rar,.bin,.img"/>
-  <div id="fileName">Nenhum arquivo selecionado</div>
-
-  <button id="restartBtn" class="actionBtn">🔄 Reiniciar Console</button>
-  <button id="shutdownBtn" class="actionBtn">⏻ Desligar Console</button>
+<!-- Centered badge + progress -->
+<div class="centerWrap" aria-hidden="true">
+  <div class="badge" id="badge">360</div>
+  <div class="progressBarOuter" aria-hidden="true">
+    <div class="progressBarInner" id="mainProgress"></div>
+  </div>
 </div>
 
-<!-- Botões fixos -->
-<button id="muteToggle">🔇 Áudio</button>
-<div id="menuBtn">
+<!-- Controls -->
+<button id="muteToggle" aria-pressed="true">🔇 Áudio</button>
+<div id="menuBtn" title="Abrir logs" aria-expanded="false">
   <div></div><div></div><div></div>
 </div>
 
-<!-- Painel de logs -->
-<div id="logPanel"></div>
+<!-- Log panel -->
+<div id="logPanel" aria-hidden="true">
+  <div id="logLines"></div>
+
+  <div class="log-controls">
+    <button id="compileBtn" class="btn-small">Compilar Shaders</button>
+    <button id="clearBtn" class="btn-small" style="background:linear-gradient(180deg,#ffdede,#ffbdbd)">Limpar</button>
+  </div>
+
+  <div id="compileProgress" aria-hidden="true">
+    <div style="font-size:12px;margin-bottom:6px">Compilando shaders...</div>
+    <div class="bar"><i id="shaderBar"></i></div>
+    <div style="font-size:12px;margin-top:6px" id="shaderStatus">Aguardando</div>
+  </div>
+</div>
+
+<!-- After boot actions -->
+<div id="afterScreen" aria-hidden="true">
+  <div class="actions">
+    <label class="actionBtn" for="fileInput" id="importLabel" style="display:inline-flex;align-items:center;gap:8px">🎮 Importar XEX</label>
+    <button class="actionBtn" id="restartBtn">🔄 Reiniciar</button>
+    <button class="actionBtn" id="shutdownBtn">⏻ Desligar</button>
+  </div>
+</div>
+
+<input id="fileInput" type="file" accept=".xex,.iso,.zip,.7z,.rar,.bin,.img" />
+
+<div class="note" id="fileNote">Nenhum arquivo selecionado</div>
 
 <script>
-const startScreen = document.getElementById("startScreen");
-const startBtn = document.getElementById("startBtn");
-const video = document.getElementById("bootVideo");
-const afterScreen = document.getElementById("afterScreen");
-const uploadBtn = document.getElementById("uploadBtn");
-const fileInput = document.getElementById("fileInput");
-const fileName = document.getElementById("fileName");
-const muteToggle = document.getElementById("muteToggle");
-const menuBtn = document.getElementById("menuBtn");
-const logPanel = document.getElementById("logPanel");
-const restartBtn = document.getElementById("restartBtn");
-const shutdownBtn = document.getElementById("shutdownBtn");
+/*
+  boot360_final.html
+  - Simula boot com vídeo, logs, barra de progresso
+  - Botão "Compilar Shaders" no painel de logs (simulação)
+  - Importar XEX, Reiniciar, Desligar, Mute, Menu
+*/
 
-// Boot commands simulados
+/* Elements */
+const startScreen = document.getElementById('startScreen');
+const startBtn = document.getElementById('startBtn');
+const video = document.getElementById('bootVideo');
+const badge = document.getElementById('badge');
+const mainProgress = document.getElementById('mainProgress');
+const muteToggle = document.getElementById('muteToggle');
+const menuBtn = document.getElementById('menuBtn');
+const logPanel = document.getElementById('logPanel');
+const logLines = document.getElementById('logLines');
+const compileBtn = document.getElementById('compileBtn');
+const clearBtn = document.getElementById('clearBtn');
+const compileProgress = document.getElementById('compileProgress');
+const shaderBar = document.getElementById('shaderBar');
+const shaderStatus = document.getElementById('shaderStatus');
+const afterScreen = document.getElementById('afterScreen');
+const fileInput = document.getElementById('fileInput');
+const fileNote = document.getElementById('fileNote');
+const restartBtn = document.getElementById('restartBtn');
+const shutdownBtn = document.getElementById('shutdownBtn');
+
+let logVisible = false;
+let compileRunning = false;
+let mainProgressPct = 0;
+let bootLogTimeouts = [];
+
+/* Boot commands (line-by-line) */
 const bootCommands = [
-  "Inicializando hardware de vídeo...",
-  "Carregando drivers gráficos...",
-  "Verificando codec de áudio...",
-  "Montando sistema de arquivos virtual...",
-  "Carregando módulos de compatibilidade...",
-  "Aplicando ajustes de desempenho...",
+  "Detectando hardware de vídeo...",
+  "Carregando drivers gráficos (driver_dx_v2) ...",
+  "Inicializando GPU pipeline...",
+  "Verificando codecs de áudio...",
+  "Montando sistema de arquivos virtual (xbox_fs)...",
+  "Carregando módulos de compatibilidade (xcompat) ...",
+  "Aplicando perf-hacks recomendados...",
   "Finalizando inicialização..."
 ];
 
-function addLogLine(line, delay){
-  setTimeout(()=>{
-    const div = document.createElement("div");
-    div.textContent = line;
-    logPanel.appendChild(div);
-    logPanel.scrollTop = logPanel.scrollHeight;
-  }, delay);
+/* Helper: add log line (immediate) */
+function addLog(line) {
+  const d = document.createElement('div');
+  d.className = 'log-line';
+  d.textContent = `> ${line}`;
+  logLines.appendChild(d);
+  logPanel.scrollTop = logPanel.scrollHeight;
 }
 
-function startBoot(){
-  video.style.display = "block";
-  afterScreen.style.display = "none";
-  logPanel.innerHTML = "";
+/* Helper: add log after delay, store timeout for cancellation */
+function addLogDelayed(line, delay) {
+  const t = setTimeout(()=> addLog(line), delay);
+  bootLogTimeouts.push(t);
+}
+
+/* Clear pending timeouts and logs */
+function clearPendingLogs() {
+  bootLogTimeouts.forEach(t => clearTimeout(t));
+  bootLogTimeouts = [];
+  logLines.innerHTML = '';
+}
+
+/* Animate main progress to target pct over duration (ms) */
+function animateMainProgressTo(targetPct, duration=600) {
+  const start = mainProgressPct;
+  const diff = targetPct - start;
+  const startTime = performance.now();
+  function step(ts) {
+    const elapsed = ts - startTime;
+    const frac = Math.min(1, elapsed / duration);
+    mainProgressPct = start + diff * frac;
+    mainProgress.style.width = `${mainProgressPct}%`;
+    if(frac < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* Start boot sequence (play video and animate logs/progress) */
+function startBoot() {
+  // reset
+  clearPendingLogs();
+  mainProgressPct = 0; mainProgress.style.width = '0%';
+  shaderBar.style.width = '0%';
+  shaderStatus.textContent = 'Aguardando';
+  compileProgress.style.display = 'none';
+  compileRunning = false;
+
+  // show video
   video.currentTime = 0;
-  video.play();
+  video.style.display = 'block';
+  afterScreen.style.display = 'none';
+  startScreen.style.display = 'none';
+
+  // Try to play (muted initially to ensure autoplay)
+  video.play().catch(()=>{ /* play may be blocked if not user gesture */ });
+
+  // schedule logs and progress increments while video plays
+  let timeAccum = 400; // ms start
+  const stepDur = 850;
+  bootCommands.forEach((cmd,i)=>{
+    addLogDelayed(cmd, timeAccum + i*stepDur);
+    // progress target increases gradually
+    const target = Math.round(((i+1)/bootCommands.length) * 92); // up to 92% before finalize
+    setTimeout(()=> animateMainProgressTo(target, 700), timeAccum + i*stepDur);
+  });
+
+  // finalization after all commands
+  const finishDelay = timeAccum + bootCommands.length*stepDur + 700;
+  const finalizeTimeout = setTimeout(()=>{
+    addLog('Inicialização completada. Entrando no sistema.');
+    animateMainProgressTo(100, 500);
+  }, finishDelay);
+  bootLogTimeouts.push(finalizeTimeout);
+
+  // when video ends (if it ends sooner/later) show afterScreen
+  video.onended = () => {
+    video.style.display = 'none';
+    afterScreen.style.display = 'flex';
+    // ensure progress at 100 if video ended manually
+    animateMainProgressTo(100, 300);
+  };
+
+  // safety: if video can't play or missing, reveal after screen after finishDelay+500ms
+  const safetyTimeout = setTimeout(()=>{
+    if(video.style.display !== 'none') {
+      // leave video visible but also reveal afterScreen if ended or not playing
+      // if video is still playing, do nothing; else show after screen
+      if(video.paused || video.ended) {
+        video.style.display = 'none';
+        afterScreen.style.display = 'flex';
+        animateMainProgressTo(100, 300);
+      }
+    }
+  }, finishDelay + 1200);
+  bootLogTimeouts.push(safetyTimeout);
 }
 
-// Start button
-startBtn.addEventListener("click", ()=>{
+/* Toggle logs panel */
+menuBtn.addEventListener('click', ()=> {
+  logVisible = !logVisible;
+  logPanel.style.display = logVisible ? 'block' : 'none';
+  menuBtn.setAttribute('aria-expanded', String(logVisible));
+});
+
+/* Mute toggle */
+muteToggle.addEventListener('click', ()=> {
+  video.muted = !video.muted;
+  muteToggle.textContent = video.muted ? '🔇 Áudio' : '🔊 Áudio';
+});
+
+/* Start button (requires user gesture to unmute) */
+startBtn.addEventListener('click', ()=> {
+  // allow sound after user interaction
   video.muted = false;
-  startScreen.style.display = "none";
   startBoot();
 });
 
-// Video ended
-video.addEventListener("ended", ()=>{
-  afterScreen.style.display = "flex";
-  bootCommands.forEach((cmd,i)=>addLogLine(cmd,i*800));
-});
-
-// Upload Game
-uploadBtn.addEventListener("click", ()=> fileInput.click());
-fileInput.addEventListener("change",(e)=>{
-  if(e.target.files.length>0){
-    fileName.textContent = "Selecionado: " + e.target.files[0].name;
+/* File import */
+fileInput.addEventListener('change', (e)=> {
+  const f = e.target.files && e.target.files[0];
+  if(f) {
+    fileNote.textContent = `Selecionado: ${f.name}`;
+    addLog(`Arquivo importado: ${f.name}`);
   } else {
-    fileName.textContent = "Nenhum arquivo selecionado";
+    fileNote.textContent = 'Nenhum arquivo selecionado';
   }
 });
 
-// Toggle mute
-muteToggle.addEventListener("click", ()=>{
-  video.muted = !video.muted;
-  muteToggle.textContent = video.muted ? "🔇 Áudio" : "🔊 Áudio";
+/* Restart */
+restartBtn.addEventListener('click', ()=> {
+  addLog('Comando: Reiniciar console recebido.');
+  startBoot();
 });
 
-// Toggle logs
-let logVisible = false;
-menuBtn.addEventListener("click", ()=>{
-  logVisible = !logVisible;
-  logPanel.style.display = logVisible ? "block" : "none";
+/* Shutdown */
+shutdownBtn.addEventListener('click', ()=> {
+  addLog('Comando: Desligar console recebido.');
+  // stop video and return to start screen
+  try { video.pause(); } catch(e){}
+  video.style.display = 'none';
+  afterScreen.style.display = 'none';
+  clearPendingLogs();
+  mainProgressPct = 0; mainProgress.style.width = '0%';
+  startScreen.style.display = 'flex';
+  fileNote.textContent = 'Nenhum arquivo selecionado';
 });
 
-// Reiniciar
-restartBtn.addEventListener("click", ()=> startBoot());
+/* Clear logs */
+clearBtn.addEventListener('click', ()=> {
+  clearPendingLogs();
+  addLog('Logs limpos pelo usuário.');
+});
 
-// Desligar
-shutdownBtn.addEventListener("click", ()=>{
-  video.pause();
-  video.style.display = "none";
-  afterScreen.style.display = "none";
-  logPanel.innerHTML = "";
-  startScreen.style.display = "flex";
+/* Compile shaders (simulated) */
+compileBtn.addEventListener('click', ()=> {
+  if(compileRunning) {
+    addLog('Compilação já em progresso.');
+    return;
+  }
+  compileRunning = true;
+  compileProgress.style.display = 'block';
+  shaderBar.style.width = '0%';
+  shaderStatus.textContent = 'Iniciando compilador...';
+  addLog('Iniciando compilação de shaders...');
+  // simulated sets of shader tasks
+  const shaderTasks = [
+    {name:'vertex_shader_core', time:700},
+    {name:'pixel_shader_lighting', time:900},
+    {name:'geometry_shader_particles', time:800},
+    {name:'postproc_bloom', time:600},
+    {name:'compute_tone_map', time:700}
+  ];
+  let acc = 0;
+  shaderBar.style.width = '0%';
+  // run tasks sequentially
+  shaderTasks.forEach((t,i)=>{
+    const startDelay = acc;
+    // show task log when starts
+    const startT = setTimeout(()=>{
+      addLog(`Compilando: ${t.name} ...`);
+      shaderStatus.textContent = `Compilando ${t.name} ...`;
+      // animate shaderBar a bit
+      const partialTarget = Math.round(((i+1)/shaderTasks.length) * 100);
+      shaderBar.style.width = partialTarget + '%';
+    }, startDelay);
+    bootLogTimeouts.push(startT);
+    acc += t.time;
+    // on task finish, add a "compiled" line
+    const finishT = setTimeout(()=>{
+      addLog(`${t.name} -> OK`);
+      shaderStatus.textContent = `OK: ${t.name}`;
+    }, startDelay + t.time);
+    bootLogTimeouts.push(finishT);
+  });
+
+  // when all tasks done
+  const doneT = setTimeout(()=>{
+    addLog('Compilação de shaders concluída com sucesso.');
+    shaderStatus.textContent = 'Compilação concluída';
+    compileRunning = false;
+    // small flash of main progress to indicate shader step (non destructive)
+    const prev = mainProgressPct;
+    animateMainProgressTo(Math.min(100, prev + 3), 300);
+  }, acc + 200);
+  bootLogTimeouts.push(doneT);
+});
+
+/* Try autoplay on load; if blocked, show start screen so user can click */
+window.addEventListener('load', ()=> {
+  // show start screen by default (desktop-focused)
+  startScreen.style.display = 'flex';
+  // but attempt silent play to prime video element
+  video.play().catch(()=>{ /* ignore */ });
+});
+
+/* Accessibility: allow Escape to close logs */
+window.addEventListener('keydown', (e)=> {
+  if(e.key === 'Escape' && logVisible) {
+    logVisible = false;
+    logPanel.style.display = 'none';
+  }
 });
 </script>
-
 </body>
 </html>
