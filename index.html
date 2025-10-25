@@ -1,113 +1,585 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Xenia — v0.5a Demo</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Xenia — v0.6a</title>
 <style>
-body,html{margin:0;padding:0;height:100%;background:#0b6623;color:#eaffea;font-family:Arial,sans-serif;overflow:hidden}
-#bootVideo,#gameVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1}
-.startScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:3}
-.start-btn,.actionBtn{background:linear-gradient(180deg,#25ff7a,#0b6623);color:#012;padding:14px 34px;border-radius:999px;border:0;font-weight:900;cursor:pointer;margin:6px;box-shadow:0 12px 30px rgba(0,0,0,0.25)}
-#fileInput{display:none}
-#gamesPanel{position:fixed;left:18px;top:70px;width:400px;max-height:72vh;overflow-y:auto;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);padding:12px;border-radius:12px;display:none;z-index:4}
-#gamesPanel h3{margin-top:0;color:#25ff7a;font-family:monospace}
-#gamesPanel ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;}
-#gamesPanel li{padding:12px;cursor:pointer;border-radius:8px;background:rgba(37,255,122,0.1);display:flex;align-items:center;gap:12px;transition:all 0.2s;}
-#gamesPanel li:hover{background:rgba(37,255,122,0.25);transform:scale(1.02);}
-.gameIcon{width:50px;height:50px;background:#012;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#25ff7a;font-weight:bold;}
-.gameName{flex:1;font-family:monospace;font-weight:700}
+:root{
+  --green:#0b6623;
+  --lime:#25ff7a;
+  --panel: rgba(0,0,0,0.56);
+  --glass: rgba(255,255,255,0.02);
+  --text: #eaffea;
+  --muted: rgba(255,255,255,0.75);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;background:radial-gradient(circle at center,var(--lime) 0%,var(--green) 85%);color:var(--text);overflow:hidden}
+
+/* video layers */
+#bootVideo,#gameVideo{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:1;background:#000}
+
+/* overlay/UI */
+.overlay{position:fixed;inset:0;z-index:3;display:flex;flex-direction:column;pointer-events:none}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;pointer-events:auto}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{width:48px;height:48;border-radius:12px;background:linear-gradient(180deg,#062,#0b6623);display:flex;align-items:center;justify-content:center;font-weight:900;font-family:monospace;color:#052}
+.controls{display:flex;gap:8px;align-items:center}
+.ctrl-btn{background:var(--panel);border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:8px;color:var(--text);cursor:pointer;font-weight:700}
+.center{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:none}
+.hub{display:flex;gap:18px;align-items:center;pointer-events:auto}
+
+/* badge + progress */
+.badge{width:220px;height:220px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-family:monospace;color:#042;background:radial-gradient(circle at 30% 20%, rgba(37,255,122,0.45), rgba(11,102,35,0.95));box-shadow:0 30px 100px rgba(11,102,35,0.35);font-size:72px}
+.progressOuter{width:60%;max-width:820px;height:12px;background:rgba(0,0,0,0.22);border-radius:10px;margin-top:18px;overflow:hidden}
+.progressInner{height:100%;width:0%;background:linear-gradient(90deg, rgba(37,255,122,0.36), rgba(37,255,122,1));transition:width 320ms linear;box-shadow:inset 0 -6px 18px rgba(0,0,0,0.35)}
+
+/* start screen / menu */
+.startScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:4;pointer-events:auto}
+.start-btn{background:linear-gradient(180deg,var(--lime),var(--green));padding:14px 36px;border-radius:999px;border:0;font-weight:900;color:#012;cursor:pointer;box-shadow:0 18px 40px rgba(0,0,0,0.35)}
+
+/* actions */
+.after-actions{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:4;pointer-events:auto;flex-wrap:wrap}
+.actionBtn{background:linear-gradient(180deg,var(--lime),var(--green));color:#012;padding:10px 18px;border-radius:999px;border:0;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.25)}
+
+.file-note{position:fixed;left:18px;bottom:18px;background:var(--panel);padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted);z-index:6;pointer-events:auto}
+
+/* panels */
+.panel{position:fixed;right:18px;top:70px;width:420px;max-height:72vh;background:var(--panel);backdrop-filter:blur(6px);padding:12px;border-radius:12px;overflow:auto;display:none;z-index:5;font-family:monospace;font-size:13px;color:#e6ffea}
+.gamesPanel{left:18px;right:auto;width:340px}
+.gamesPanel ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.game-item{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.02)}
+.gameIcon{width:48px;height:48;border-radius:8px;background:#012;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--lime)}
+.gameName{font-weight:800}
+
+/* settings */
+.settings .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.03)}
+.settings label{font-size:13px;color:var(--muted)}
+input[type=range]{width:140px}
+
+/* logs */
+.logLine{padding:6px;border-bottom:1px dashed rgba(255,255,255,0.03);font-family:monospace;font-size:13px}
+
+/* small version text */
+.versionTxt{position:fixed;bottom:12px;right:18px;color:#bfffc9;font-weight:800;font-family:monospace;font-size:13px;z-index:7;pointer-events:none}
+
+/* responsive */
+@media(max-width:900px){
+  .panel{width:92vw;left:4vw;right:4vw}
+  .gamesPanel{width:86vw;left:7vw}
+  .badge{width:160px;height:160px;font-size:48px}
+  .progressOuter{width:86%}
+}
 </style>
 </head>
 <body>
 
+<!-- Video layers -->
 <video id="bootVideo" playsinline preload="auto">
   <source src="xbox360_boot.mp4" type="video/mp4">
 </video>
-
 <video id="gameVideo" playsinline preload="auto"></video>
 
-<div class="startScreen" id="startScreen">
-  <h1>Xenia</h1>
-  <button id="startBtn" class="start-btn">Iniciar Boot</button>
-  <label class="actionBtn" for="fileInput">📂 Adicionar Jogo</label>
-  <input type="file" id="fileInput" accept=".mp4,.xex,.iso">
-  <button id="toggleGamesBtn" class="actionBtn">🎮 Lista de Jogos</button>
+<!-- Overlay -->
+<div class="overlay">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">X</div>
+      <div>
+        <div style="font-weight:900">Xenia</div>
+        <div style="font-size:12px;color:var(--muted)">Emulator UI — v0.6a</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btnLogs" class="ctrl-btn" title="Abrir logs">Logs</button>
+      <button id="btnSettings" class="ctrl-btn" title="Abrir settings">Settings</button>
+      <button id="btnFullscreen" class="ctrl-btn" title="Fullscreen">⛶</button>
+      <button id="btnMute" class="ctrl-btn" title="Mute">🔇</button>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="hub">
+      <div class="badge">360</div>
+      <div>
+        <div style="font-size:18px;font-weight:800">Xenia — v0.6a</div>
+        <div style="height:8px"></div>
+        <div class="progressOuter" aria-hidden="true">
+          <div class="progressInner" id="mainProgress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="after-actions" id="actionsRow" style="display:none;pointer-events:auto">
+    <label for="fileInput" class="actionBtn" id="btnImport">📂 Importar Jogo</label>
+    <button class="actionBtn" id="btnInstallDLC">📦 Install DLC</button>
+    <button class="actionBtn" id="btnTitleUpdate">🔄 Title Update</button>
+    <button class="actionBtn" id="btnCreateUser">👤 Create User</button>
+    <button class="actionBtn" id="btnGames">🎮 Games</button>
+    <button class="actionBtn" id="btnRestart">🔄 Reiniciar</button>
+    <button class="actionBtn" id="btnShutdown">⏻ Desligar</button>
+  </div>
 </div>
 
-<div id="gamesPanel">
-  <h3>📚 Jogos</h3>
+<!-- Start screen -->
+<div class="startScreen" id="startScreen">
+  <h1 style="margin:0 0 6px 0">Xenia</h1>
+  <div style="font-weight:700;margin-bottom:8px">v0.6a — Demo</div>
+  <button id="btnStart" class="start-btn">Iniciar Boot</button>
+  <div style="display:flex;gap:10px;margin-top:12px">
+    <label class="actionBtn" for="fileInputSmall">📂 Adicionar Jogo</label>
+    <button class="actionBtn" id="btnOpenGames">🎮 Lista</button>
+  </div>
+</div>
+
+<!-- Hidden file inputs -->
+<input id="fileInput" type="file" accept=".mp4,.xex,.iso,.mkv,.webm" style="display:none"/>
+<input id="fileInputSmall" type="file" accept=".mp4,.xex,.iso,.mkv,.webm" style="display:none"/>
+
+<!-- Panels -->
+<div class="panel" id="panelLogs" aria-hidden="true">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-weight:900">System Logs</div>
+    <button id="clearLogs" class="ctrl-btn" style="padding:6px 8px">Clear</button>
+  </div>
+  <div id="logsContainer"></div>
+</div>
+
+<div class="panel gamesPanel" id="panelGames" aria-hidden="true">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-weight:900">Games</div>
+    <div style="font-size:12px;color:var(--muted)">click to play</div>
+  </div>
   <ul id="gamesList"></ul>
 </div>
 
+<div class="panel" id="panelSettings" aria-hidden="true">
+  <div style="font-weight:900;margin-bottom:8px">Settings</div>
+
+  <div class="settings">
+    <div class="row">
+      <label>Graphics: Resolution</label>
+      <select id="settingResolution">
+        <option value="1x">1x (768p)</option>
+        <option value="1.5x">1.5x (1080p)</option>
+        <option value="2x" selected>2x (1440p)</option>
+        <option value="3x">3x (4K)</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Graphics: VSync</label>
+      <input type="checkbox" id="settingVsync"/>
+    </div>
+
+    <div class="row">
+      <label>Shaders Quality</label>
+      <select id="settingShaders">
+        <option value="low">Low</option>
+        <option value="med" selected>Medium</option>
+        <option value="high">High</option>
+        <option value="ultra">Ultra</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Sound Volume</label>
+      <input id="settingVolume" type="range" min="0" max="1" step="0.01" value="0.9"/>
+    </div>
+
+    <div class="row">
+      <label>Mute</label>
+      <input id="settingMute" type="checkbox"/>
+    </div>
+
+    <div class="row">
+      <label>Screen: Fullscreen on boot</label>
+      <input id="settingFsBoot" type="checkbox"/>
+    </div>
+
+    <div class="row">
+      <label>Video: Playback speed</label>
+      <input id="settingPlayback" type="range" min="0.5" max="2" step="0.1" value="1"/>
+    </div>
+
+    <div class="row">
+      <label>System language</label>
+      <select id="settingLang">
+        <option value="pt-BR" selected>Português (BR)</option>
+        <option value="en-US">English (US)</option>
+      </select>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+      <button id="btnSaveSettings" class="ctrl-btn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="file-note" id="fileNote">Nenhum arquivo selecionado</div>
+<div class="versionTxt">Xenia — v0.6a</div>
+
 <script>
-// Elementos
-const startScreen = document.getElementById('startScreen');
-const startBtn = document.getElementById('startBtn');
-const fileInput = document.getElementById('fileInput');
-const gamesList = document.getElementById('gamesList');
-const gamesPanel = document.getElementById('gamesPanel');
-const toggleGamesBtn = document.getElementById('toggleGamesBtn');
+/* ========= State & Elements ========= */
 const bootVideo = document.getElementById('bootVideo');
 const gameVideo = document.getElementById('gameVideo');
+const btnStart = document.getElementById('btnStart');
+const startScreen = document.getElementById('startScreen');
+const actionsRow = document.getElementById('actionsRow');
+const btnImport = document.getElementById('btnImport');
+const btnRestart = document.getElementById('btnRestart');
+const btnShutdown = document.getElementById('btnShutdown');
+const btnGames = document.getElementById('btnGames');
+const btnOpenGames = document.getElementById('btnOpenGames');
+const fileInput = document.getElementById('fileInput');
+const fileInputSmall = document.getElementById('fileInputSmall');
+const fileNote = document.getElementById('fileNote');
+const mainProgress = document.getElementById('mainProgress');
 
-let games = []; // Array {name, file}
+const panelLogs = document.getElementById('panelLogs');
+const logsContainer = document.getElementById('logsContainer');
+const btnLogs = document.getElementById('btnLogs');
+const clearLogsBtn = document.getElementById('clearLogs');
 
-// Iniciar boot
-startBtn.onclick = ()=>{
-  bootVideo.style.display='block';
-  bootVideo.currentTime=0;
-  bootVideo.play();
-  startScreen.style.display='none';
-  bootVideo.onended = ()=>{bootVideo.style.display='none';startScreen.style.display='flex';}
+const panelGames = document.getElementById('panelGames');
+const gamesListEl = document.getElementById('gamesList');
+const btnGamesToggle = document.getElementById('btnGames');
+
+const panelSettings = document.getElementById('panelSettings');
+const btnSettings = document.getElementById('btnSettings');
+const btnFullscreen = document.getElementById('btnFullscreen');
+const btnMute = document.getElementById('btnMute');
+
+const btnInstallDLC = document.getElementById('btnInstallDLC');
+const btnTitleUpdate = document.getElementById('btnTitleUpdate');
+const btnCreateUser = document.getElementById('btnCreateUser');
+
+const settingResolution = document.getElementById('settingResolution');
+const settingVsync = document.getElementById('settingVsync');
+const settingShaders = document.getElementById('settingShaders');
+const settingVolume = document.getElementById('settingVolume');
+const settingMute = document.getElementById('settingMute');
+const settingFsBoot = document.getElementById('settingFsBoot');
+const settingPlayback = document.getElementById('settingPlayback');
+const settingLang = document.getElementById('settingLang');
+const btnSaveSettings = document.getElementById('btnSaveSettings');
+
+let games = []; // {name, file, thumb?}
+let logs = [];
+let bootPct = 0, bootInterval = null;
+let videoPlaying = false;
+
+/* Audio objects (optional files) */
+const audioPowerOn = new Audio('power_on.mp3'); audioPowerOn.preload='auto';
+const audioPowerOff = new Audio('power_off.mp3'); audioPowerOff.preload='auto';
+const audioClick = new Audio('click.mp3'); audioClick.preload='auto';
+
+/* Load settings from localStorage */
+const DEFAULTS = {
+  volume: 0.9,
+  mute: false,
+  resolution: '2x',
+  vsync: true,
+  shaders: 'med',
+  fsOnBoot: false,
+  playback: 1.0,
+  lang: 'pt-BR'
+};
+function loadSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem('xenia_settings') || '{}');
+    return Object.assign({}, DEFAULTS, s);
+  }catch(e){ return DEFAULTS; }
+}
+function saveSettings(s){
+  localStorage.setItem('xenia_settings', JSON.stringify(s));
 }
 
-// Toggle painel de jogos
-toggleGamesBtn.onclick = ()=>{
-  gamesPanel.style.display = (gamesPanel.style.display==='none')?'flex':'none';
+/* Apply settings to UI & audio */
+let settings = loadSettings();
+settingVolume.value = settings.volume;
+settingMute.checked = settings.mute;
+settingResolution.value = settings.resolution;
+settingVsync.checked = settings.vsync;
+settingShaders.value = settings.shaders;
+settingFsBoot.checked = settings.fsOnBoot;
+settingPlayback.value = settings.playback;
+settingLang.value = settings.lang;
+applyAudioSettings();
+
+/* helper: add log */
+function addLog(txt){
+  const now = new Date().toLocaleTimeString();
+  logs.push(`[${now}] ${txt}`);
+  const div = document.createElement('div');
+  div.className = 'logLine';
+  div.textContent = `[${now}] ${txt}`;
+  logsContainer.appendChild(div);
+  panelLogs.scrollTop = panelLogs.scrollHeight;
 }
 
-// Upload de jogo
-fileInput.onchange = (e)=>{
-  const file = e.target.files[0];
-  if(file){
-    const name = file.name;
-    games.push({name:file.name,file:file});
-    const li = document.createElement('li');
+/* Clear logs */
+clearLogsBtn.onclick = ()=>{
+  logs = [];
+  logsContainer.innerHTML = '';
+  addLog('Logs limpos pelo usuário.');
+};
 
-    // Ícone estilo Xenia
-    const icon = document.createElement('div');
-    icon.className='gameIcon';
-    icon.textContent='🎮';
+/* persist settings button */
+btnSaveSettings.onclick = ()=>{
+  settings.volume = parseFloat(settingVolume.value);
+  settings.mute = settingMute.checked;
+  settings.resolution = settingResolution.value;
+  settings.vsync = settingVsync.checked;
+  settings.shaders = settingShaders.value;
+  settings.fsOnBoot = settingFsBoot.checked;
+  settings.playback = parseFloat(settingPlayback.value);
+  settings.lang = settingLang.value;
+  saveSettings(settings);
+  applyAudioSettings();
+  addLog('Configurações salvas.');
+  panelSettings.style.display = 'none';
+};
 
-    const span = document.createElement('div');
-    span.className='gameName';
-    span.textContent=name;
+/* apply audio volume/mute */
+function applyAudioSettings(){
+  const vol = settings.volume ?? parseFloat(settingVolume.value);
+  [audioPowerOn, audioPowerOff, audioClick].forEach(a=>{
+    try{ a.volume = vol; a.muted = settings.mute ?? settingMute.checked; }catch(e){}
+  });
+  if(settings.mute) btnMute.textContent = '🔈'; else btnMute.textContent = '🔇';
+}
 
-    li.appendChild(icon);
-    li.appendChild(span);
-    li.onclick = ()=>playGame(file);
-    gamesList.appendChild(li);
+/* Boot sequence */
+function startBoot(userTriggered=false){
+  // if fullscreen on boot enabled
+  if(settings.fsOnBoot) {
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
   }
-}
 
-// Função de reproduzir jogo
-function playGame(file){
-  if(file.type.startsWith('video')){
-    gameVideo.src = URL.createObjectURL(file);
-    gameVideo.style.display='block';
-    gameVideo.currentTime=0;
-    gameVideo.play();
-    startScreen.style.display='none';
-    gamesPanel.style.display='none';
-    gameVideo.onended = ()=>{
-      gameVideo.style.display='none';
-      startScreen.style.display='flex';
+  startScreen.style.display = 'none';
+  bootVideo.style.display = 'block';
+  panelLogs.style.display = 'block';
+  panelGames.style.display = 'none';
+  panelSettings.style.display = 'none';
+  actionsRow.style.display = 'none';
+  bootPct = 0;
+  mainProgress.style.width = '0%';
+  addLog('Iniciando boot Xenia...');
+  // play power sound
+  if(!settings.mute) { audioPowerOn.currentTime = 0; audioPowerOn.play().catch(()=>{}); }
+  // attempt to play video
+  try{ bootVideo.currentTime = 0; bootVideo.play().catch(()=>{}); }catch(e){}
+  videoPlaying = true;
+
+  // simulate progress and logs
+  const steps = [
+    {t:600, m:'Detectando hardware de vídeo...'},
+    {t:1200, m:'Carregando drivers gráficos...'},
+    {t:1800, m:'Inicializando GPU pipeline...'},
+    {t:2400, m:'Verificando codecs de áudio...'},
+    {t:3000, m:'Montando sistema de arquivos...'},
+    {t:3600, m:'Carregando módulos de compatibilidade...'},
+    {t:4200, m:'Aplicando ajustes de desempenho...'},
+    {t:4800, m:'Finalizando inicialização...'}
+  ];
+
+  // clear any existing interval
+  if(bootInterval) clearInterval(bootInterval);
+  // animate percentage smoothly using setInterval
+  const totalDuration = 5200;
+  const start = performance.now();
+  bootInterval = setInterval(()=>{
+    const elapsed = performance.now() - start;
+    const pct = Math.min(100, Math.round((elapsed/totalDuration)*100));
+    bootPct = pct;
+    mainProgress.style.width = pct + '%';
+    // trigger staged logs
+    steps.forEach(s=>{
+      if(!s.done && elapsed >= s.t){ addLog(s.m); s.done = true; }
+    });
+    if(pct >= 100){
+      clearInterval(bootInterval);
+      addLog('Boot concluído. Entrando no sistema.');
+      setTimeout(()=>{ bootVideo.style.display = 'none'; panelLogs.style.display = 'none'; actionsRow.style.display = 'flex'; panelGames.style.display = 'block'; }, 700);
     }
+  }, 120);
+}
+
+/* Event bindings for start/restart/shutdown */
+btnStart.onclick = ()=>{
+  // save current UI settings to local object
+  settings = loadSettings();
+  applyAudioSettings();
+  if(!settings.mute) { audioClick.currentTime = 0; audioClick.play().catch(()=>{}); }
+  startBoot(true);
+};
+
+document.getElementById('btnRestart').onclick = ()=>{
+  if(!settings.mute) { audioClick.currentTime = 0; audioClick.play().catch(()=>{}); }
+  videoPlaying = false;
+  startBoot(true);
+};
+
+document.getElementById('btnShutdown').onclick = ()=>{
+  if(!settings.mute) { audioClick.currentTime = 0; audioClick.play().catch(()=>{}); audioPowerOff.play().catch(()=>{}); }
+  bootVideo.style.display = 'none';
+  gameVideo.style.display = 'none';
+  actionsRow.style.display = 'none';
+  panelLogs.style.display = 'none';
+  panelGames.style.display = 'none';
+  panelSettings.style.display = 'none';
+  startScreen.style.display = 'flex';
+  addLog('Console desligado.');
+};
+
+/* Import / add game (main file input) */
+document.getElementById('btnImport').addEventListener('click', ()=> fileInput.click());
+document.getElementById('fileInput').addEventListener('change', async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  games.push({name:f.name, file: f});
+  appendGameToList({name:f.name, file:f});
+  fileNote.textContent = `Arquivo selecionado: ${f.name}`;
+  addLog(`Jogo importado: ${f.name}`);
+  if(!settings.mute) { audioClick.currentTime = 0; audioClick.play().catch(()=>{}); }
+});
+
+/* small input on start screen */
+fileInputSmall.addEventListener('change', (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  games.push({name:f.name,file:f});
+  appendGameToList({name:f.name,file:f});
+  fileNote.textContent = `Arquivo selecionado: ${f.name}`;
+  addLog(`Jogo importado (quick): ${f.name}`);
+});
+
+/* append game UI */
+function appendGameToList(game){
+  const li = document.createElement('li');
+  li.className = 'game-item';
+  const icon = document.createElement('div'); icon.className='gameIcon'; icon.textContent='🎮';
+  const name = document.createElement('div'); name.className='gameName'; name.textContent = game.name;
+  li.appendChild(icon); li.appendChild(name);
+  li.onclick = ()=> playGameFile(game.file);
+  gamesListEl.appendChild(li);
+}
+
+/* play game file (video only) */
+function playGameFile(file){
+  // if video, play directly
+  if(file.type.startsWith('video') || /\.(mp4|webm|mkv)$/i.test(file.name)){
+    gameVideo.src = URL.createObjectURL(file);
+    gameVideo.playbackRate = settings.playback || 1.0;
+    gameVideo.style.display = 'block';
+    startScreen.style.display = 'none';
+    panelGames.style.display = 'none';
+    actionsRow.style.display = 'none';
+    addLog(`Reproduzindo vídeo do jogo: ${file.name}`);
+    if(!settings.mute) { audioClick.currentTime = 0; audioClick.play().catch(()=>{}); }
+    gameVideo.onended = ()=> {
+      gameVideo.style.display = 'none';
+      addLog(`Vídeo terminado: ${file.name}. Voltando ao menu.`);
+      // restore to main menu
+      startScreen.style.display = 'flex';
+      actionsRow.style.display = 'flex';
+      panelGames.style.display = 'block';
+    };
   } else {
-    alert('Somente arquivos de vídeo podem ser reproduzidos neste demo.');
+    // For non-video (e.g., .xex/.iso) we simulate start and log
+    addLog(`Iniciando title (simulado) para: ${file.name}`);
+    if(!settings.mute) audioClick.play().catch(()=>{});
+    // simulate short play then return
+    const simT = 2500;
+    mainProgress.style.width = '0%';
+    let t=0;
+    const iv = setInterval(()=> {
+      t+=100; mainProgress.style.width = Math.min(100, Math.round((t/simT)*100)) + '%';
+      if(t>=simT){ clearInterval(iv); addLog(`Title finalizado (simulado): ${file.name}`); startScreen.style.display='flex'; actionsRow.style.display='flex'; panelGames.style.display='block'; }
+    },100);
   }
 }
+
+/* toggle panels */
+btnGamesToggle.onclick = ()=> {
+  panelGames.style.display = (panelGames.style.display==='none' || panelGames.style.display==='' )? 'block':'none';
+  if(panelGames.style.display==='block') addLog('Abrindo painel de jogos.');
+};
+btnOpenGames.onclick = ()=> { panelGames.style.display = 'block'; addLog('Abrindo painel de jogos (quick).'); };
+btnGames.onclick = ()=> { panelGames.style.display = (panelGames.style.display==='block')? 'none':'block'; if(!settings.mute) audioClick.play().catch(()=>{}); };
+
+/* logs panel toggle */
+btnLogs.onclick = ()=> { panelLogs.style.display = (panelLogs.style.display==='block')? 'none':'block'; if(!settings.mute) audioClick.play().catch(()=>{}); };
+
+/* settings toggle */
+btnSettings.onclick = ()=> { panelSettings.style.display = (panelSettings.style.display==='block')? 'none':'block'; if(!settings.mute) audioClick.play().catch(()=>{}); };
+
+/* fullscreen toggle */
+btnFullscreen.onclick = ()=> {
+  if(!settings.mute) audioClick.play().catch(()=>{});
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(err=> addLog('Fullscreen error: '+err.message));
+  else document.exitFullscreen();
+};
+
+/* mute toggle / volume control */
+btnMute.onclick = ()=> {
+  settings.mute = !settings.mute;
+  settingMute.checked = settings.mute;
+  applyAudioSettings();
+  addLog(settings.mute ? 'Som mutado' : 'Som ativado');
+};
+
+/* install DLC / title update / create user */
+btnInstallDLC.onclick = ()=> {
+  addLog('Iniciando instalação de DLC (simulado)...');
+  setTimeout(()=> addLog('DLC instalado com sucesso.'), 1400);
+};
+btnTitleUpdate.onclick = ()=> {
+  addLog('Baixando Title Update (simulado)...');
+  setTimeout(()=> addLog('Title Update aplicado.'), 1800);
+};
+btnCreateUser.onclick = ()=> {
+  const u = prompt('Nome do novo usuário:');
+  if(u){ addLog(`Usuário criado: ${u}`); alert('Usuário '+u+' criado (simulação).'); } else addLog('Criação de usuário cancelada.');
+};
+
+/* play/pause boot video end handling */
+bootVideo.onended = ()=> {
+  bootVideo.style.display = 'none';
+  addLog('Boot video finalizado (media).');
+  if(bootPct < 100){ /* if boot still running, finish it */ mainProgress.style.width='100%'; }
+  panelLogs.style.display = 'none';
+  actionsRow.style.display = 'flex';
+  panelGames.style.display = 'block';
+};
+
+/* settings live controls */
+settingVolume.oninput = (e)=> {
+  settings.volume = parseFloat(e.target.value);
+  applyAudioSettings();
+};
+settingMute.onchange = (e)=> {
+  settings.mute = e.target.checked;
+  applyAudioSettings();
+};
+settingPlayback.oninput = (e)=> {
+  settings.playback = parseFloat(e.target.value);
+  addLog('Playback speed ajustada: ' + settings.playback);
+};
+
+/* initial logs */
+addLog('Xenia UI iniciado — v0.6a');
+addLog('Clique em "Iniciar Boot" para simular o boot do console.');
+
+/* Load example: if user provides a file named minecraft_game.mp4 in same folder, we could pre-add it (optional):
+   NOTE: local files can't be read without user action (browser security). So we only accept user-uploaded files.
+*/
+
+/* Utility: persist settings every change */
+window.addEventListener('beforeunload', ()=> saveSettings(settings));
 </script>
 
 </body>
